@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 
+from datetime import timedelta
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,18 +27,27 @@ SECRET_KEY = 'django-insecure-j52e)0wc*)t1ex2&&qz98o($e)ens(+)6p&+6_5&z1w34$2h!7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost','192.168.191.65','192.168.100.13','127.0.0.1']
 
+
+CORS_ORIGIN_ALLOW_ALL = True
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # Application definition
 
 INSTALLED_APPS = [
+    'geekom.apps.GeeconConfig',
+    'corsheaders',
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'crispy_forms',
+    'crispy_bootstrap4'
 ]
 
 MIDDLEWARE = [
@@ -47,7 +58,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
+
 ]
+
+
 
 ROOT_URLCONF = 'Tabor.urls'
 
@@ -68,6 +83,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'Tabor.wsgi.application'
+
 
 
 # Database
@@ -121,3 +137,17 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+      ],
+}
+
+SIMPLE_JWT = {
+     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
+     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+     'ROTATE_REFRESH_TOKENS': True,
+     'BLACKLIST_AFTER_ROTATION': True
+}
+
