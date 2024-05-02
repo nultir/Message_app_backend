@@ -14,8 +14,8 @@ django-appconf==1.0.5
 django-compressor==4.4
 django-cors-headers==3.14.0
 django-crispy-forms==2.0
-django-libsass
 django-tables==22.7.0
+django-libsass
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 EasyProcess==1.1
