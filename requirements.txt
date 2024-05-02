@@ -18,9 +18,9 @@ django-tables2
 django-libsass
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
-EasyProcess==1.1
-entrypoint==21.1
-fonttools==4.39.3
+EasyProcess
+entrypoint
+fonttools
 frozenlist==1.3.3
 idna==3.4
 imutils==0.5.4
