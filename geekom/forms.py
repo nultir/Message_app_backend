@@ -24,8 +24,8 @@ class NewUser(UserCreationForm):
     
     
 class Create_message(ModelForm):
-    Conversation_id = forms.ModelChoiceField(choices=Conversation.objects.all())
-    Sender = forms.ModelChoiceField(choices=User.objects.all())
+    Conversation_id = forms.ModelChoiceField(queryset=Conversation.objects.all())
+    Sender = forms.ModelChoiceField(queryset=User.objects.all())
     Message = forms.CharField()
     Date = forms.DateField()
     
@@ -37,15 +37,15 @@ class Create_message(ModelForm):
 
 class Create_conversation(ModelForm):
     Key = forms.CharField()
-    Creator = forms.ChoiceField(choices=User.objects.all())
+    Creator = forms.ModelChoiceField(queryset=User.objects.all())
     class Meta:
         model = Conversation
         fields = ["Key","Creator"]
         
 
 class Add_to_conversation(ModelForm):
-    User_id = forms.ChoiceField(choices=User.objects.all())
-    Conversation_id = forms.ModelChoiceField(choices=Conversation.objects.all())
+    User_id = forms.ModelChoiceField(queryset=User.objects.all())
+    Conversation_id = forms.ModelChoiceField(queryset=Conversation.objects.all())
     Administrator = forms.BooleanField()
     
     class Meta:
@@ -55,8 +55,8 @@ class Add_to_conversation(ModelForm):
         
 
 class Add_user_to_friends(ModelForm):
-    User_1 = forms.ChoiceField(choices=User.objects.all())
-    User_2 = forms.ChoiceField(choices=User.objects.all())
+    User_1 = forms.ModelChoiceField(queryset=User.objects.all())
+    User_2 = forms.ModelChoiceField(queryset=User.objects.all())
     Status = forms.CharField()
     
     class Meta:
