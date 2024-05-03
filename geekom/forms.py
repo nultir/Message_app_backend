@@ -43,6 +43,7 @@ class Create_conversation(ModelForm):
         model = Conversation
         fields = ["Name","Key","Creator"]
         
+#xd
 
 class Add_to_conversation(ModelForm):
     User_id = forms.ModelChoiceField(queryset=User.objects.all())
