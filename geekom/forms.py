@@ -36,11 +36,12 @@ class Create_message(ModelForm):
 
 
 class Create_conversation(ModelForm):
+    Name = forms.CharField()
     Key = forms.CharField()
     Creator = forms.ModelChoiceField(queryset=User.objects.all())
     class Meta:
         model = Conversation
-        fields = ["Key","Creator"]
+        fields = ["Name","Key","Creator"]
         
 
 class Add_to_conversation(ModelForm):

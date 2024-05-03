@@ -40,7 +40,7 @@ def register(request):
             return HttpResponse("success")
         return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
     form = NewUser()
-    return HttpResponse("No_success")
+    return HttpResponse({"success":"success"}, status=status.HTTP_200_OK) 
 
 
 
@@ -78,7 +78,7 @@ def Add_message(request):
         form = Create_message(message_post)
         if form.is_valid():
             form.save()
-            return HttpResponse('success')
+            return HttpResponse({"success":"success"}, status=status.HTTP_200_OK) 
     return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
    
 # Create your views here.
@@ -96,13 +96,14 @@ def Create_Conversation(request: HttpRequest):
             print("validation error", v)
         
         conversation_form = {
+            "Name": conversation_post['Name'],
             "Key": conversation_post['Key'],
             "Creator": request.user
         }
         form = Create_conversation(conversation_form)
         if form.is_valid():
             form.save()
-            return HttpRequest("success")   
+            return HttpResponse({"success":"success"}, status=status.HTTP_200_OK) 
         return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
         
 @csrf_exempt
@@ -116,5 +117,5 @@ def Add_user_to_conf(requset: HttpRequest):
         form = Add_to_conversation(user_to_conf_form)
         if form.is_valid():
             form.save()
-            return HttpRequest("success")
+            return HttpResponse({"success":"success"}, status=status.HTTP_200_OK) 
         return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)

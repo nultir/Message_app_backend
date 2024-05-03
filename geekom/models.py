@@ -24,6 +24,7 @@ class Avatar(models.Model):
 
 
 class Conversation(models.Model):
+    Name = models.CharField(max_length=500, null=True)
     Key = models.CharField(max_length=500, null=True)
     Creator = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     If_group = models.BooleanField(default=False)
