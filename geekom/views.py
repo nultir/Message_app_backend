@@ -3,7 +3,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
-from .forms import NewUser, Create_message, Create_conversation, Add_to_conversation
+from .forms import NewUser, Create_message, Create_conversation, Add_to_conversation, Users_conversation
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
@@ -48,11 +48,15 @@ def register(request):
 @csrf_exempt
 def Get_messages_to_conv(request):
     if request.method == "GET":
-        conversation_id = request.GET.get('Conversation_id')
-        conversation_needed = Conversation.objects.get(id=int(conversation_id))
+        conversation_id = int(request.GET.get('id'))
+        conversation_needed = Conversation.objects.get(id=conversation_id)
         messages = list(Message.objects.filter(Conversation_id=conversation_needed).values())
         for i in messages:
-            i['Sender'] = User.objects.get(id=int(i['Sender'])).get_username()
+            i['Sender_id'] = User.objects.get(id=int(i['Sender_id'])).get_username()
+        message_first = "Wiadomości w " + conversation_needed.Name
+        messages.insert(0,{"Conversation_id_id": conversation_needed.Name,
+                           "Sender_id": "Admin",
+                           "Message": message_first})
         return JsonResponse(messages,safe=False)
     return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
    
@@ -61,7 +65,6 @@ def Get_messages_to_conv(request):
 def Add_message(request):
     if request.method == "POST":
         message_post = json.loads(request.body)
-        conversation_id = int(request.GET.get("id"))
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
         try:
             valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
@@ -70,7 +73,7 @@ def Add_message(request):
         except ValueError as v:
             print("validation error", v)  
         message_post = {
-            "Conversation_id": Conversation.objects.get(id=conversation_id),
+            "Conversation_id": Conversation.objects.get(id=message_post['Conversation_id']),
             "Sender": User.objects.get(id=int(user_id)),
             "Message": message_post['Message'],
             "Date": datetime.date.today()
@@ -96,15 +99,25 @@ def Create_Conversation(request: HttpRequest):
             print("validation error", v)
         
         conversation_form = {
-            "Name": conversation_post['Name'],
-            "Key": conversation_post['Key'],
+            "Name": conversation_post['conversation_name'],
+            "Key": conversation_post['encryption_key'],
             "Creator": request.user
         }
         form = Create_conversation(conversation_form)
         if form.is_valid():
-            form.save()
-            return HttpResponse({"success":"success"}, status=status.HTTP_200_OK) 
+            coversation_model = form.save()
+        
+            user_to_conf_form = {
+                "User_id": request.user,
+                "Conversation_id": coversation_model,
+                "Administrator": True
+            }
+            form2 = Add_to_conversation(user_to_conf_form)
+            if form2.is_valid():
+                form2.save()
+                return HttpResponse({"success":"success"}, status=status.HTTP_200_OK) 
         return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
+        
         
 @csrf_exempt
 def Add_user_to_conf(requset: HttpRequest):
@@ -112,10 +125,51 @@ def Add_user_to_conf(requset: HttpRequest):
         post_information = json.loads(requset.body)
         user_to_conf_form = {
             "User_id": User.objects.get(username=post_information['User_id']),
-            "Conversation_id": Conversation.objects.get(id=post_information["Conversation_id"])
+            "Conversation_id": Conversation.objects.get(id=post_information["Conversation_id"]),
+            "Administrator": False
         }
         form = Add_to_conversation(user_to_conf_form)
         if form.is_valid():
             form.save()
             return HttpResponse({"success":"success"}, status=status.HTTP_200_OK) 
         return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+@csrf_exempt
+def Get_user_conversation(request):
+    if request.method == "GET":
+        token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+        try:
+            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
+            user_id = valid_data['user_id']
+            request.user = User.objects.get(id=int(user_id))
+        except ValueError as v:
+            print("validation error", v)
+        converasations_list = []
+        
+        converasations_id = list(Users_conversation.objects.filter(User_id=request.user).values())
+        for i in converasations_id:
+            holder = {
+                "Conversation_id": i['Conversation_id_id'],
+                "conversation_name": Conversation.objects.get(id=int(i['Conversation_id_id'])).Name,
+                "User_id":  User.objects.get(id=int(i['User_id_id'])).get_username()
+            }
+            converasations_list.append(holder)
+        return JsonResponse(converasations_list,safe=False)
+    return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@csrf_exempt
+def User_info(request: HttpRequest):
+    if request.method == "GET":
+        token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+        try:
+            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
+            user_id = valid_data['user_id']
+            request.user = User.objects.get(id=int(user_id))
+        except ValueError as v:
+            print("validation error", v)
+        nick = {
+            "nick": request.user.get_username()
+        }
+        return JsonResponse(nick,safe=False)

@@ -29,19 +29,24 @@ class Conversation(models.Model):
     Creator = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     If_group = models.BooleanField(default=False)
     
+    def get_name(self):
+        return self.Name
+    
     
 class Message(models.Model):
     Conversation_id = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)
     Date = models.DateField()
     Message = models.CharField(max_length=500, null=True)
     Sender = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    image = models.ImageField(upload_to=folder_path,default=None)
+
     
 class Users_conversation(models.Model):
     User_id = models.ForeignKey(User,on_delete=models.CASCADE, null=True)
     Conversation_id = models.ForeignKey(Conversation,on_delete=models.CASCADE, null=True)
     Administrator = models.BooleanField(default=False, null=True)
     If_blocked = models.BooleanField(default=False)
+    
+    
     
 class Status_list(models.Model):
     class status_enum(models.TextChoices):
