@@ -12,6 +12,8 @@ urlpatterns = [
     path('conversation/create_converastion', views.Create_Conversation, name="con_create"),
     path('conversation/user/add', views.Add_user_to_conf, name="con_create"),
     path('conversation/get_conversation', views.Get_user_conversation, name="conversation_user"),
+    path('conversation/user/info', views.Conversation_user_info, name="conversation_user_info"),
+    path('conversation/user/block', views.Block_from_conversation, name="conversation_user_block"),
     
     
 ]

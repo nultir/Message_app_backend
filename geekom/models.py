@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy
+from django.utils import timezone
 
 #create file system
 
@@ -35,7 +36,7 @@ class Conversation(models.Model):
     
 class Message(models.Model):
     Conversation_id = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)
-    Date = models.DateField()
+    Date = models.DateTimeField(default=timezone.now)
     Message = models.CharField(max_length=500, null=True)
     Sender = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
@@ -43,7 +44,7 @@ class Message(models.Model):
 class Users_conversation(models.Model):
     User_id = models.ForeignKey(User,on_delete=models.CASCADE, null=True)
     Conversation_id = models.ForeignKey(Conversation,on_delete=models.CASCADE, null=True)
-    Administrator = models.BooleanField(default=False, null=True)
+    Administrator = models.BooleanField(default=False)
     If_blocked = models.BooleanField(default=False)
     
     

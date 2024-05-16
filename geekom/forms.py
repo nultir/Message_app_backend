@@ -27,7 +27,7 @@ class Create_message(ModelForm):
     Conversation_id = forms.ModelChoiceField(queryset=Conversation.objects.all())
     Sender = forms.ModelChoiceField(queryset=User.objects.all())
     Message = forms.CharField()
-    Date = forms.DateField()
+    Date = forms.DateTimeField()
     
     class Meta:
         model = Message
@@ -48,12 +48,11 @@ class Create_conversation(ModelForm):
 class Add_to_conversation(ModelForm):
     User_id = forms.ModelChoiceField(queryset=User.objects.all())
     Conversation_id = forms.ModelChoiceField(queryset=Conversation.objects.all())
-    Administrator = forms.BooleanField()
     
     class Meta:
         model = Users_conversation
         
-        fields = ["User_id","Conversation_id","Administrator"]
+        fields = ["User_id","Conversation_id"]
         
 
 class Add_user_to_friends(ModelForm):

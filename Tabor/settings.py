@@ -62,8 +62,6 @@ MIDDLEWARE = [
 
 ]
 
-
-
 ROOT_URLCONF = 'Tabor.urls'
 
 TEMPLATES = [
