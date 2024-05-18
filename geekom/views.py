@@ -3,7 +3,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
-from .forms import NewUser, Create_message, Create_conversation, Add_to_conversation, Users_conversation
+from .forms import NewUser, Create_message, Create_conversation, Add_to_conversation, Users_conversation,Add_description_conversation
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
@@ -61,6 +61,11 @@ def Get_messages_to_conv(request):
         conversation_needed = Conversation.objects.get(id=conversation_id)
         messages = list(Message.objects.filter(Conversation_id=conversation_needed).values())
         check_in_conv = Users_conversation.objects.filter(User_id=user_id,Conversation_id=conversation_id).exists()
+        check_decripton = Description_of_conversation.objects.filter(Conversation_id=conversation_id).exists()
+        if check_decripton:
+            description = Description_of_conversation.objects.get(Conversation_id=conversation_id).Description
+        else:
+            description = "brak description"
         if check_in_conv:
             check_block = Users_conversation.objects.get(User_id=user_id,Conversation_id=conversation_id).If_blocked
             if not check_block:
@@ -69,15 +74,18 @@ def Get_messages_to_conv(request):
                 message_first = "Wiadomości w " + conversation_needed.Name
                 messages.insert(0,{"Conversation_id_id": conversation_needed.Name,
                                 "Sender_id": "Admin",
-                                "Message": message_first})      
+                                "Message": message_first,
+                                "Description": description})      
             else:
                messages = [{"Conversation_id_id": "BLOCK",
                             "Sender_id": "Admin",
-                            "Message": "You are blocked"}]
+                            "Message": "You are blocked",
+                            "Description": "BLOCK"}]
         else:
             messages = [{"Conversation_id_id": "Error",
                             "Sender_id": "Admin",
-                            "Message": "Cannot Acces"}]
+                            "Message": "Cannot Acces",
+                            "Description": "Error"}]
         return JsonResponse(messages,safe=False)
     return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
    
@@ -158,8 +166,6 @@ def Add_user_to_conf(requset: HttpRequest):
             "Conversation_id": Conversation.objects.get(id=post_information["id"]),
         }
         form = Add_to_conversation(user_to_conf_form)
-        print(form.errors)
-        print(form.is_valid())
         if form.is_valid():
             form.save()
             return HttpResponse({"success":"success"}, status=status.HTTP_200_OK) 
@@ -169,7 +175,9 @@ def Add_user_to_conf(requset: HttpRequest):
 @csrf_exempt
 def Get_user_conversation(request):
     if request.method == "GET":
+        
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+        print(token)
         try:
             valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
             user_id = valid_data['user_id']
@@ -183,7 +191,8 @@ def Get_user_conversation(request):
             holder = {
                 "Conversation_id": i['Conversation_id_id'],
                 "conversation_name": Conversation.objects.get(id=int(i['Conversation_id_id'])).Name,
-                "User_id":  User.objects.get(id=int(i['User_id_id'])).get_username()
+                "User_id":  User.objects.get(id=int(i['User_id_id'])).get_username(),
+                "Administrator": i["Administrator"]
             }
             converasations_list.append(holder)
         return JsonResponse(converasations_list,safe=False)
@@ -245,9 +254,80 @@ def Block_from_conversation(request: HttpRequest):
         username = post_information['username']
         if username == request.user.get_username():
             return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
-        blocked_user = User.objects.get(username=username)
-        relation = Users_conversation.objects.get(Conversation_id=converastion_id,User_id=blocked_user)
-        relation.If_blocked = True
-        relation.save()
+        if Users_conversation.objects.get(Conversation_id=converastion_id,User_id=request.user).Administrator:
+            blocked_user = User.objects.get(username=username)
+            relation = Users_conversation.objects.get(Conversation_id=converastion_id,User_id=blocked_user)
+            relation.If_blocked = True
+            relation.save()
+            return HttpResponse('success')
+    return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@csrf_exempt
+def Remove_conversation(request: HttpRequest):
+    if request.method == "POST":
+        token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+        try:
+            
+            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
+            user_id = valid_data['user_id']
+            request.user = User.objects.get(id=int(user_id))
+        except ValueError as v:
+            print("validation error", v)
+        
+        post_information = json.loads(request.body)
+        conversation = Conversation.objects.get(id=post_information['id'])
+        user_conversation = Users_conversation.objects.get(Conversation_id=conversation,User_id=request.user)
+        if user_conversation.Administrator == True:
+            conversation.delete()
+            return HttpResponse('success')
+    return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
+    
+@csrf_exempt
+def Leave_conversation(request: HttpRequest):
+    if request.method == "POST":
+        token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+        try:
+            
+            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
+            user_id = valid_data['user_id']
+            request.user = User.objects.get(id=int(user_id))
+        except ValueError as v:
+            print("validation error", v)
+    
+        post_information = json.loads(request.body)
+        conversation = Conversation.objects.get(id=post_information['id'])
+        Users_conversation.objects.get(Conversation_id=conversation,User_id=request.user).delete()
         return HttpResponse('success')
     return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
+
+@csrf_exempt
+def Add_description(request: HttpRequest):
+    if request.method == "POST":
+        token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+        try:
+            
+            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
+            user_id = valid_data['user_id']
+            request.user = User.objects.get(id=int(user_id))
+        except ValueError as v:
+            print("validation error", v)
+
+        post_information = json.loads(request.body)
+        Conversation_id = Conversation.objects.get(id=post_information["id"])
+        user_conversation = Users_conversation.objects.get(Conversation_id=Conversation_id,User_id=request.user)
+        if Description_of_conversation.objects.filter(Conversation_id=Conversation_id).exists():
+            Description_of_conversation.objects.get(Conversation_id=Conversation_id).delete()
+         
+        if user_conversation.Administrator == True:
+            form_description = {
+                "Conversation_id": Conversation_id,
+                "Description": post_information["Description"]
+            }
+            form = Add_description_conversation(form_description)
+            if form.is_valid():
+                form.save()
+                return HttpResponse('success')
+    return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
+
+

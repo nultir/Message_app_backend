@@ -14,6 +14,8 @@ urlpatterns = [
     path('conversation/get_conversation', views.Get_user_conversation, name="conversation_user"),
     path('conversation/user/info', views.Conversation_user_info, name="conversation_user_info"),
     path('conversation/user/block', views.Block_from_conversation, name="conversation_user_block"),
-    
+    path('conversation/delete', views.Remove_conversation, name="remove_conversation"),
+    path('conversation/user/leave', views.Leave_conversation, name="user_leave"),
+    path('conversation/description/add', views.Add_description, name="description_add"),
     
 ]

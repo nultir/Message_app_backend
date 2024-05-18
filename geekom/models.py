@@ -59,3 +59,8 @@ class Status_list(models.Model):
     User_2 = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="second")
     Status = models.CharField(max_length=2,choices=status_enum.choices, default=status_enum.NO_RELATION)
     
+
+class Description_of_conversation(models.Model):
+    Conversation_id = models.ForeignKey(Conversation,on_delete=models.CASCADE, null=True)
+    Description = models.CharField(max_length=500, null=True)
+    

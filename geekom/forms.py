@@ -2,7 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Message,Conversation,Users_conversation,Status_list
+from .models import Message,Conversation,Users_conversation,Status_list,Description_of_conversation
 
 
 class NewUser(UserCreationForm):
@@ -64,3 +64,13 @@ class Add_user_to_friends(ModelForm):
         model = Status_list
         
         fields = ["User_1","User_2","Status"]
+        
+
+class Add_description_conversation(ModelForm):
+    Conversation_id = forms.ModelChoiceField(queryset=Conversation.objects.all())
+    Description = forms.CharField()
+    
+    class Meta:
+        model = Description_of_conversation
+        
+        fields = ["Conversation_id","Description"]
