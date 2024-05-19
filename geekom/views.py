@@ -6,7 +6,6 @@ from .models import *
 from .forms import NewUser, Create_message, Create_conversation, Add_to_conversation, Users_conversation,Add_description_conversation
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import status
 from django.utils import timezone
 from django.contrib.auth.models import User
 from rest_framework.decorators import renderer_classes
@@ -16,6 +15,16 @@ from django.forms.models import model_to_dict
 import datetime
 import json
 import re
+
+
+
+def token_veryfication(token):
+    try:
+        valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
+        user_id = valid_data['user_id']
+        return User.objects.get(id=int(user_id))
+    except ValueError as v:
+        print("validation error", v)
 
 
 @csrf_exempt
@@ -49,25 +58,19 @@ def register(request):
 @csrf_exempt
 def Get_messages_to_conv(request):
     if request.method == "GET":
-        user_id = 0
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        try:
-            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
-            user_id = valid_data['user_id']
-            request.user = User.objects.get(id=int(user_id))
-        except ValueError as v:
-            print("validation error", v)
+        request.user = token_veryfication(token)
         conversation_id = int(request.GET.get('id'))
         conversation_needed = Conversation.objects.get(id=conversation_id)
         messages = list(Message.objects.filter(Conversation_id=conversation_needed).values())
-        check_in_conv = Users_conversation.objects.filter(User_id=user_id,Conversation_id=conversation_id).exists()
+        check_in_conv = Users_conversation.objects.filter(User_id=request.user,Conversation_id=conversation_id).exists()
         check_decripton = Description_of_conversation.objects.filter(Conversation_id=conversation_id).exists()
         if check_decripton:
             description = Description_of_conversation.objects.get(Conversation_id=conversation_id).Description
         else:
             description = "brak description"
         if check_in_conv:
-            check_block = Users_conversation.objects.get(User_id=user_id,Conversation_id=conversation_id).If_blocked
+            check_block = Users_conversation.objects.get(User_id=request.user,Conversation_id=conversation_id).If_blocked
             if not check_block:
                 for i in messages:
                     i['Sender_id'] = User.objects.get(id=int(i['Sender_id'])).get_username()
@@ -95,16 +98,11 @@ def Add_message(request):
     if request.method == "POST":
         message_post = json.loads(request.body)
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        try:
-            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
-            user_id = valid_data['user_id']
-            request.user = User.objects.get(id=int(user_id))
-        except ValueError as v:
-            print("validation error", v)  
+        request.user = token_veryfication(token) 
         date = datetime.datetime.now()
         message_post = {
             "Conversation_id": Conversation.objects.get(id=message_post['Conversation_id']),
-            "Sender": User.objects.get(id=int(user_id)),
+            "Sender": request.user,
             "Message": message_post['Message'],
             "Date": date
         }
@@ -122,12 +120,7 @@ def Create_Conversation(request: HttpRequest):
     if request.method == "POST":
         conversation_post = json.loads(request.body)
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        try:
-            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
-            user_id = valid_data['user_id']
-            request.user = User.objects.get(id=int(user_id))
-        except ValueError as v:
-            print("validation error", v)
+        request.user = token_veryfication(token)
         
         conversation_form = {
             "Name": conversation_post['conversation_name'],
@@ -175,7 +168,6 @@ def Add_user_to_conf(requset: HttpRequest):
 @csrf_exempt
 def Get_user_conversation(request):
     if request.method == "GET":
-        
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
         print(token)
         try:
@@ -203,14 +195,13 @@ def Get_user_conversation(request):
 def User_info(request: HttpRequest):
     if request.method == "GET":
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        try:
-            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
-            user_id = valid_data['user_id']
-            request.user = User.objects.get(id=int(user_id))
-        except ValueError as v:
-            print("validation error", v)
+        request.user = token_veryfication(token)
+        Description = "Desc"
+        if Description_of_User.objects.filter(User_id=request.user).exists():
+            Description = Description_of_User.objects.get(User_id=request.user).Description
         nick = {
-            "nick": request.user.get_username()
+            "nick": request.user.get_username(),
+            "Description": Description
         }
         return JsonResponse(nick,safe=False)
 
@@ -219,18 +210,18 @@ def Conversation_user_info(request: HttpRequest):
     if request.method == "GET":
         converastion_get_id = int(request.GET.get('id'))
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        try:
-            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
-            user_id = valid_data['user_id']
-            request.user = User.objects.get(id=int(user_id))
-        except ValueError as v:
-            print("validation error", v)
+        request.user = token_veryfication(token)
         
         users = list(Users_conversation.objects.filter(Conversation_id=converastion_get_id).values()) 
         for i in users:
+            if Description_of_User.objects.filter(User_id=i['User_id_id']).exists():
+                i.update({"Description": Description_of_User.objects.get(User_id=i['User_id_id']).Description})
+            else:
+                i.update({"Description": "Brak opisu"})
             i['User_id_id'] = User.objects.get(id=i['User_id_id']).get_username()
             if i["If_blocked"] == True:
                 users.remove(i)
+           
         return JsonResponse(users,safe=False)
     
     
@@ -240,13 +231,7 @@ def Block_from_conversation(request: HttpRequest):
     if request.method == "POST":
 
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        try:
-            
-            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
-            user_id = valid_data['user_id']
-            request.user = User.objects.get(id=int(user_id))
-        except ValueError as v:
-            print("validation error", v)
+        request.user = token_veryfication(token)
             
         
         post_information = json.loads(request.body)
@@ -267,13 +252,7 @@ def Block_from_conversation(request: HttpRequest):
 def Remove_conversation(request: HttpRequest):
     if request.method == "POST":
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        try:
-            
-            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
-            user_id = valid_data['user_id']
-            request.user = User.objects.get(id=int(user_id))
-        except ValueError as v:
-            print("validation error", v)
+        request.user = token_veryfication(token)
         
         post_information = json.loads(request.body)
         conversation = Conversation.objects.get(id=post_information['id'])
@@ -287,13 +266,7 @@ def Remove_conversation(request: HttpRequest):
 def Leave_conversation(request: HttpRequest):
     if request.method == "POST":
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        try:
-            
-            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
-            user_id = valid_data['user_id']
-            request.user = User.objects.get(id=int(user_id))
-        except ValueError as v:
-            print("validation error", v)
+        request.user = token_veryfication(token)
     
         post_information = json.loads(request.body)
         conversation = Conversation.objects.get(id=post_information['id'])
@@ -305,13 +278,7 @@ def Leave_conversation(request: HttpRequest):
 def Add_description(request: HttpRequest):
     if request.method == "POST":
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        try:
-            
-            valid_data = TokenBackend(algorithm='HS256').decode(token,verify=False)
-            user_id = valid_data['user_id']
-            request.user = User.objects.get(id=int(user_id))
-        except ValueError as v:
-            print("validation error", v)
+        request.user = token_veryfication(token)
 
         post_information = json.loads(request.body)
         Conversation_id = Conversation.objects.get(id=post_information["id"])
@@ -331,3 +298,22 @@ def Add_description(request: HttpRequest):
     return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@csrf_exempt
+def Add_description_user(request: HttpRequest):
+    if request.method == "POST":
+        token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
+        request.user = token_veryfication(token)
+
+        post_information = json.loads(request.body)
+        if Description_of_User.objects.filter(User_id=request.user).exists():
+            Description_of_User.objects.get(User_id=request.user).delete()
+         
+        form_description = {
+            "User_id": request.user,
+            "Description": post_information["Description"]
+        }
+        form = Add_description(form_description)
+        if form.is_valid():
+            form.save()
+            return HttpResponse('success')
+    return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)

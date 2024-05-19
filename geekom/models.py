@@ -64,3 +64,7 @@ class Description_of_conversation(models.Model):
     Conversation_id = models.ForeignKey(Conversation,on_delete=models.CASCADE, null=True)
     Description = models.CharField(max_length=500, null=True)
     
+
+class Description_of_User(models.Model):
+    User_id = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    Description = models.CharField(max_length=500, null=True)

@@ -2,7 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Message,Conversation,Users_conversation,Status_list,Description_of_conversation
+from .models import *
 
 
 class NewUser(UserCreationForm):
@@ -74,3 +74,21 @@ class Add_description_conversation(ModelForm):
         model = Description_of_conversation
         
         fields = ["Conversation_id","Description"]
+        
+
+class Add_Avatar(ModelForm):
+    User_id = forms.ModelChoiceField(queryset=User.objects.all())
+    Avatar = forms.ImageField()
+    class Meta:
+        model = Avatar
+        
+        fields = ["User_id","Avatar"]
+        
+
+class Add_User_description(ModelForm):
+    User_id = forms.ModelChoiceField(queryset=User.objects.all())
+    Description = forms.CharField()
+    class Meta:
+        model = Description_of_User
+        
+        fields = ["User_id","Description"]
