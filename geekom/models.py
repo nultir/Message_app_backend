@@ -33,6 +33,9 @@ class Conversation(models.Model):
     def get_name(self):
         return self.Name
     
+    def __str__(self):
+        return self.Name
+    
     
 class Message(models.Model):
     Conversation_id = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True)

@@ -18,5 +18,7 @@ urlpatterns = [
     path('conversation/delete', views.Remove_conversation, name="remove_conversation"),
     path('conversation/user/leave', views.Leave_conversation, name="user_leave"),
     path('conversation/description/add', views.Add_description, name="description_add"),
+    path('upload_json', views.add_json, name="description_add"),
+    
     
 ]

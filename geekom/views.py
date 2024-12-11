@@ -317,3 +317,14 @@ def Add_description_user(request: HttpRequest):
             form.save()
             return HttpResponse('success')
     return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@csrf_exempt
+def add_json(request: HttpRequest):
+    if request.method == "POST":
+
+        post_information = json.loads(request.body)
+        print(post_information)
+        
+        return HttpResponse('success')
+    return HttpResponse({"bad request":"bad request"}, status=status.HTTP_400_BAD_REQUEST)
